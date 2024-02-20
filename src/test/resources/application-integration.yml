@@ -1,0 +1,6 @@
+spring:
+  datasource:
+    url: jdbc:tc:mysql:8:///orderdb?TC_INITSCRIPT=file:src/main/resources/sql/V20240220001007__create_orders_table.sql
+    username: test
+    password: test
+    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver

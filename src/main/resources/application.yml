@@ -4,3 +4,12 @@ server:
 spring:
   application:
     name: order-service
+
+mybatis:
+  mapper-locations:
+    - classpath:mapper/*.xml
+
+google:
+  maps:
+    api:
+      key: ${GOOGLE_MAPS_API_KEY}

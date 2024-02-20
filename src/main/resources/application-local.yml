@@ -1,0 +1,20 @@
+spring:
+  config:
+    activate:
+      on-profile:
+        - local
+  datasource:
+    url: jdbc:mysql://localhost:3316/orderdb?useSSL=false&serverTimezone=Asia/Hong_Kong&characterEncoding=UTF-8
+    username: root
+    password: password1234
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      connection-timeout: 30000
+      idle-timeout: 60000
+      max-lifetime: 1800000
+      maximum-pool-size: 16
+      minimum-idle: 8
+
+logging:
+  level:
+    _org.springframework.web.servlet.HandlerMapping.Mappings: debug
