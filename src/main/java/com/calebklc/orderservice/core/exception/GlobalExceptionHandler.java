@@ -2,15 +2,17 @@ package com.calebklc.orderservice.core.exception;
 
 import com.calebklc.orderservice.core.api.ErrorResponse;
 import com.calebklc.orderservice.core.constant.BizError;
-import com.fasterxml.jackson.databind.exc.ValueInstantiationException;
+import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+
+import java.util.ArrayList;
 
 @RestControllerAdvice
 @Slf4j
@@ -42,6 +44,24 @@ public class GlobalExceptionHandler {
         log.debug("Field: {}, FieldError: {}", fieldError.getField(), fieldError.getDefaultMessage());
 
         return new ResponseEntity<>(new ErrorResponse(fieldError.getDefaultMessage()),
+                                    HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ErrorResponse> handle(ConstraintViolationException e) {
+        log.error("ConstraintViolationException caught", e);
+
+        String errorMessage = new ArrayList<>(e.getConstraintViolations()).getFirst().getMessage();
+
+        return new ResponseEntity<>(new ErrorResponse(errorMessage),
+                                    HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErrorResponse> handle(MethodArgumentTypeMismatchException e) {
+        log.error("MethodArgumentTypeMismatchException caught", e);
+
+        return new ResponseEntity<>(new ErrorResponse(BizError.INVALID_PARAMETER.getMessage()),
                                     HttpStatus.BAD_REQUEST);
     }
 }

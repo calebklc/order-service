@@ -10,6 +10,7 @@ import com.calebklc.orderservice.order.constant.CommonConstant;
 import com.calebklc.orderservice.order.constant.OrderStatus;
 import com.calebklc.orderservice.order.entity.Order;
 import com.calebklc.orderservice.order.mapper.OrderMapper;
+import com.calebklc.orderservice.order.vo.OrderVO;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -37,7 +38,7 @@ class OrderServiceApplicationTests {
 
     @AfterEach
     void tearDown() {
-        orderMapper.deleteByBizId(TestConstant.BIZ_ID);
+        orderMapper.deleteAll(true);
     }
 
     @Test
@@ -223,7 +224,76 @@ class OrderServiceApplicationTests {
         assertThat(successCount.get()).isEqualTo(1);
     }
 
-    private void seedOrder() {
+    @Test
+    @DisplayName("Fetch orders")
+    void whenFetchOrdersThenShouldReturnOrders() {
+        Order order = seedOrder();
+
+        webTestClient.get()
+                .uri(uriBuilder -> uriBuilder.path("/orders")
+                        .queryParam("page", TestConstant.PAGE)
+                        .queryParam("limit", TestConstant.LIMIT)
+                        .build())
+                .exchange()
+                .expectStatus().isOk()
+                .expectBodyList(OrderVO.class).value(orders -> {
+                    assertThat(orders).isNotNull();
+                    assertThat(orders.size()).isEqualTo(1);
+                    assertThat(orders.get(0).id()).isEqualTo(order.getBizId());
+                    assertThat(orders.get(0).distance()).isEqualTo(order.getDistance());
+                    assertThat(orders.get(0).status()).isEqualTo(OrderStatus.valueOf(order.getStatus()));
+                });
+    }
+
+    @Test
+    @DisplayName("Fetch orders with invalid page")
+    void whenFetchOrdersWithInvalidPageThenShouldReturnEmpty() {
+        webTestClient.get()
+                .uri(uriBuilder -> uriBuilder.path("/orders")
+                        .queryParam("page", -1)
+                        .queryParam("limit", TestConstant.LIMIT)
+                        .build())
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody(ErrorResponse.class).value(errorResponse -> {
+                    assertThat(errorResponse).isNotNull();
+                    assertThat(errorResponse.error()).isEqualTo("The page must be equal or greater than 1");
+                });
+    }
+
+    @Test
+    @DisplayName("Fetch orders with invalid limit")
+    void whenFetchOrdersWithInvalidLimitThenShouldReturnEmpty() {
+        webTestClient.get()
+                .uri(uriBuilder -> uriBuilder.path("/orders")
+                        .queryParam("page", TestConstant.PAGE)
+                        .queryParam("limit", -1)
+                        .build())
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody(ErrorResponse.class).value(errorResponse -> {
+                    assertThat(errorResponse).isNotNull();
+                    assertThat(errorResponse.error()).isEqualTo("The limit must be equal or greater than 1");
+                });
+    }
+
+    @Test
+    @DisplayName("Fetch orders with no orders")
+    void whenFetchOrdersWithNoOrdersThenShouldReturnEmpty() {
+        webTestClient.get()
+                .uri(uriBuilder -> uriBuilder.path("/orders")
+                        .queryParam("page", TestConstant.PAGE * 5)
+                        .queryParam("limit", TestConstant.LIMIT)
+                        .build())
+                .exchange()
+                .expectStatus().isOk()
+                .expectBodyList(OrderVO.class).value(orders -> {
+                    assertThat(orders).isNotNull();
+                    assertThat(orders.size()).isEqualTo(0);
+                });
+    }
+
+    private Order seedOrder() {
         Order order = Order.builder()
                 .bizId(TestConstant.BIZ_ID)
                 .distance(TestConstant.VALID_DISTANCE)
@@ -232,5 +302,7 @@ class OrderServiceApplicationTests {
                 .build();
 
         orderMapper.insert(order);
+
+        return order;
     }
 }

@@ -2,6 +2,7 @@ package com.calebklc.orderservice.order.mapper;
 
 
 import com.calebklc.orderservice.TestConstant;
+import com.calebklc.orderservice.core.util.PaginationUtil;
 import com.calebklc.orderservice.order.constant.OrderStatus;
 import com.calebklc.orderservice.order.entity.Order;
 import org.junit.jupiter.api.AfterEach;
@@ -99,6 +100,26 @@ public class OrderMapperTest {
 
         Order deleted = orderMapper.findByBizId(TestConstant.BIZ_ID).orElse(null);
         assertThat(deleted).isNull();
+    }
+
+    @Test
+    void selectByPage() {
+        Order order = createOrder();
+        orderMapper.insert(order);
+
+        int offset = PaginationUtil.calculateOffset(TestConstant.PAGE, TestConstant.LIMIT);
+
+        assertThat(orderMapper.findByPagination(TestConstant.LIMIT, offset)).isNotEmpty();
+    }
+
+    @Test
+    void deleteAll() {
+        Order order = createOrder();
+        orderMapper.insert(order);
+
+        orderMapper.deleteAll(true);
+
+        assertThat(orderMapper.findByPagination(100, 0)).isEmpty();
     }
 
     private Order createOrder() {

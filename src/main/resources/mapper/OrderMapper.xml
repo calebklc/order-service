@@ -56,6 +56,19 @@
         from orders
         where biz_id = #{bizId,jdbcType=VARCHAR}
     </select>
+    <!--  Query large amount of data with deferred join for better performance  -->
+    <select id="findByPagination" resultMap="orderResultMap">
+        select
+        <include refid="orderColumns"/>
+        from orders o
+        inner join (
+        select id
+        from orders
+        order by created_at, id desc
+        limit #{limit,jdbcType=INTEGER} offset #{offset,jdbcType=INTEGER}
+        ) as t using (id)
+        order by created_at, id desc
+    </select>
     <update id="updateStatus" parameterType="com.calebklc.orderservice.order.entity.Order">
         update orders
         set `status` = #{status,jdbcType=VARCHAR},
@@ -65,5 +78,10 @@
     <delete id="deleteByBizId" parameterType="string">
         delete from orders
         where biz_id = #{bizId,jdbcType=VARCHAR}
+    </delete>
+    <delete id="deleteAll">
+        <if test="confirm">
+            delete from orders
+        </if>
     </delete>
 </mapper>

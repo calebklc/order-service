@@ -2,6 +2,7 @@ package com.calebklc.orderservice.order.service;
 
 import com.calebklc.orderservice.core.constant.BizError;
 import com.calebklc.orderservice.core.exception.BizException;
+import com.calebklc.orderservice.core.util.PaginationUtil;
 import com.calebklc.orderservice.core.util.UUIDUtil;
 import com.calebklc.orderservice.external.service.DistanceMatrixService;
 import com.calebklc.orderservice.order.api.request.PlaceOrderRequest;
@@ -9,9 +10,13 @@ import com.calebklc.orderservice.order.api.request.TakeOrderRequest;
 import com.calebklc.orderservice.order.constant.OrderStatus;
 import com.calebklc.orderservice.order.entity.Order;
 import com.calebklc.orderservice.order.mapper.OrderMapper;
+import com.calebklc.orderservice.order.vo.OrderVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+
+import java.util.Collection;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -54,7 +59,7 @@ public class OrderServiceImpl implements OrderService {
         if (!OrderStatus.TAKEN.name().equals(request.status())) {
             throw new BizException(BizError.ACCEPT_TAKEN_ONLY);
         }
-        
+
         Order order = orderMapper.findByBizId(bizId)
                 .orElseThrow(() -> new BizException(BizError.ORDER_NOT_FOUND));
 
@@ -69,5 +74,18 @@ public class OrderServiceImpl implements OrderService {
         if (affectRows != 1) {
             throw new BizException(BizError.ORDER_ALREADY_TAKEN);
         }
+    }
+
+    @Override
+    public Collection<OrderVO> fetchOrders(int page, int limit) {
+        int offset = PaginationUtil.calculateOffset(page, limit);
+
+        Collection<Order> orders = orderMapper.findByPagination(limit, offset);
+
+        return orders.stream()
+                .map((Order order) -> OrderVO.from(order.getBizId(),
+                                                   order.getDistance(),
+                                                   OrderStatus.valueOf(order.getStatus())))
+                .collect(Collectors.toList());
     }
 }

@@ -8,15 +8,20 @@ import com.calebklc.orderservice.order.api.response.TakeOrderResponse;
 import com.calebklc.orderservice.order.constant.OrderStatus;
 import com.calebklc.orderservice.order.entity.Order;
 import com.calebklc.orderservice.order.service.OrderService;
+import com.calebklc.orderservice.order.vo.OrderVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.Collection;
 
 @RestController
 @RequestMapping("/orders")
 @RequiredArgsConstructor
+@Validated
 public class OrderController implements OrderResource {
 
     private final OrderService orderService;
@@ -38,5 +43,10 @@ public class OrderController implements OrderResource {
         orderService.takeOrder(bizId, request);
 
         return ResponseEntity.ok(new TakeOrderResponse());
+    }
+
+    @Override
+    public ResponseEntity<Collection<OrderVO>> fetchOrders(int page, int limit) {
+        return ResponseEntity.ok(orderService.fetchOrders(page, limit));
     }
 }

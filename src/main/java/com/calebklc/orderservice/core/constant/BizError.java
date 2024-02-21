@@ -5,6 +5,7 @@ public enum BizError implements BaseError {
      * System related error
      */
     SYSTEM_UNKNOWN_ERROR("System unknown error"),
+    INVALID_PARAMETER("Invalid parameter"),
 
     /**
      * Order related error
