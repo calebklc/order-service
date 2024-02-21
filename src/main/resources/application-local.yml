@@ -18,3 +18,4 @@ spring:
 logging:
   level:
     _org.springframework.web.servlet.HandlerMapping.Mappings: debug
+    org.springframework.transaction.interceptor: trace

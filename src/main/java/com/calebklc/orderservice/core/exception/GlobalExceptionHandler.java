@@ -2,9 +2,11 @@ package com.calebklc.orderservice.core.exception;
 
 import com.calebklc.orderservice.core.api.ErrorResponse;
 import com.calebklc.orderservice.core.constant.BizError;
+import com.fasterxml.jackson.databind.exc.ValueInstantiationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -27,7 +29,7 @@ public class GlobalExceptionHandler {
         log.error("BizException caught", e);
 
         return new ResponseEntity<>(new ErrorResponse(e.getMessage()),
-                                    HttpStatus.INTERNAL_SERVER_ERROR);
+                                    HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -42,5 +44,4 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(new ErrorResponse(fieldError.getDefaultMessage()),
                                     HttpStatus.BAD_REQUEST);
     }
-
 }

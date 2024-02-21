@@ -1,7 +1,11 @@
 package com.calebklc.orderservice.order;
 
 import com.calebklc.orderservice.TestConstant;
+import com.calebklc.orderservice.core.constant.BizError;
+import com.calebklc.orderservice.core.exception.BizException;
 import com.calebklc.orderservice.order.api.request.PlaceOrderRequest;
+import com.calebklc.orderservice.order.api.request.TakeOrderRequest;
+import com.calebklc.orderservice.order.constant.CommonConstant;
 import com.calebklc.orderservice.order.constant.OrderStatus;
 import com.calebklc.orderservice.order.entity.Order;
 import com.calebklc.orderservice.order.service.OrderService;
@@ -16,7 +20,9 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -68,5 +74,62 @@ public class OrderControllerTest {
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("When take order then should successfully take order")
+    public void whenTakeOrderThenShouldReturnOrder() throws Exception {
+        TakeOrderRequest request = new TakeOrderRequest(OrderStatus.TAKEN.name());
+
+        mockMvc.perform(patch("/orders/" + TestConstant.BIZ_ID)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status", is(CommonConstant.SUCCESS)));
+    }
+
+    @Test
+    @DisplayName("When take order with invalid status then should return bad request")
+    public void whenTakeOrderWithInvalidStatusThenShouldReturnBadRequest() throws Exception {
+        TakeOrderRequest request = new TakeOrderRequest("INVALID");
+
+        doThrow(new BizException(BizError.ACCEPT_TAKEN_ONLY))
+                .when(orderService).takeOrder(TestConstant.BIZ_ID, request);
+
+        mockMvc.perform(patch("/orders/" + TestConstant.BIZ_ID)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error", is(BizError.ACCEPT_TAKEN_ONLY.getMessage())));
+    }
+
+    @Test
+    @DisplayName("When take order with invalid biz id then should return not found")
+    public void whenTakeOrderWithInvalidBizIdThenShouldReturnNotFound() throws Exception {
+        TakeOrderRequest request = new TakeOrderRequest(OrderStatus.TAKEN.name());
+
+        doThrow(new BizException(BizError.ORDER_NOT_FOUND))
+                .when(orderService).takeOrder(TestConstant.BIZ_ID, request);
+
+        mockMvc.perform(patch("/orders/" + TestConstant.BIZ_ID)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error", is(BizError.ORDER_NOT_FOUND.getMessage())));
+    }
+
+    @Test
+    @DisplayName("When take order with already taken order then should return bad request")
+    public void whenTakeOrderWithAlreadyTakenOrderThenShouldReturnBadRequest() throws Exception {
+        TakeOrderRequest request = new TakeOrderRequest(OrderStatus.TAKEN.name());
+
+        doThrow(new BizException(BizError.ORDER_ALREADY_TAKEN))
+                .when(orderService).takeOrder(TestConstant.BIZ_ID, request);
+
+        mockMvc.perform(patch("/orders/" + TestConstant.BIZ_ID)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error", is(BizError.ORDER_ALREADY_TAKEN.getMessage())));
     }
 }

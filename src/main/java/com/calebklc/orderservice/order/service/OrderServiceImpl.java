@@ -5,6 +5,7 @@ import com.calebklc.orderservice.core.exception.BizException;
 import com.calebklc.orderservice.core.util.UUIDUtil;
 import com.calebklc.orderservice.external.service.DistanceMatrixService;
 import com.calebklc.orderservice.order.api.request.PlaceOrderRequest;
+import com.calebklc.orderservice.order.api.request.TakeOrderRequest;
 import com.calebklc.orderservice.order.constant.OrderStatus;
 import com.calebklc.orderservice.order.entity.Order;
 import com.calebklc.orderservice.order.mapper.OrderMapper;
@@ -46,5 +47,27 @@ public class OrderServiceImpl implements OrderService {
         }
 
         return order;
+    }
+
+    @Override
+    public void takeOrder(String bizId, TakeOrderRequest request) {
+        if (!OrderStatus.TAKEN.name().equals(request.status())) {
+            throw new BizException(BizError.ACCEPT_TAKEN_ONLY);
+        }
+        
+        Order order = orderMapper.findByBizId(bizId)
+                .orElseThrow(() -> new BizException(BizError.ORDER_NOT_FOUND));
+
+        if (order.getStatus().equals(OrderStatus.TAKEN.name())) {
+            throw new BizException(BizError.ORDER_ALREADY_TAKEN);
+        }
+
+        order.setStatus(request.status());
+
+        int affectRows = orderMapper.updateStatus(order);
+
+        if (affectRows != 1) {
+            throw new BizException(BizError.ORDER_ALREADY_TAKEN);
+        }
     }
 }

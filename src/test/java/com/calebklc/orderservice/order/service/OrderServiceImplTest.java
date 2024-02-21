@@ -7,6 +7,7 @@ import com.calebklc.orderservice.core.exception.BizException;
 import com.calebklc.orderservice.core.util.UUIDUtil;
 import com.calebklc.orderservice.external.service.DistanceMatrixService;
 import com.calebklc.orderservice.order.api.request.PlaceOrderRequest;
+import com.calebklc.orderservice.order.api.request.TakeOrderRequest;
 import com.calebklc.orderservice.order.constant.OrderStatus;
 import com.calebklc.orderservice.order.entity.Order;
 import com.calebklc.orderservice.order.mapper.OrderMapper;
@@ -20,7 +21,9 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -109,5 +112,76 @@ public class OrderServiceImplTest {
             }
         }
     }
-}
 
+    @Test
+    @DisplayName("When take order then return order succeeds")
+    void whenTakeOrderThenReturnOrderSucceeds() {
+        Order order = Order.builder()
+                .bizId(mockUUID)
+                .distance(TestConstant.VALID_DISTANCE)
+                .status(OrderStatus.UNASSIGNED.name())
+                .version(0)
+                .build();
+        when(orderMapper.findByBizId(mockUUID)).thenReturn(java.util.Optional.of(order));
+        when(orderMapper.updateStatus(order)).thenReturn(1);
+
+        assertDoesNotThrow(() -> orderService.takeOrder(mockUUID, new TakeOrderRequest(OrderStatus.TAKEN.name())));
+        verify(orderMapper).updateStatus(order);
+    }
+
+    @Test
+    @DisplayName("When take order with invalid status then return order fails")
+    void whenTakeOrderWithInvalidStatusThenReturnOrderFails() {
+        try {
+            orderService.takeOrder(mockUUID, new TakeOrderRequest("INVALID"));
+        } catch (Exception e) {
+            assertEquals(BizError.ACCEPT_TAKEN_ONLY.getMessage(), e.getMessage());
+        }
+    }
+
+    @Test
+    @DisplayName("When take order with order not found then return order fails")
+    void whenTakeOrderWithOrderNotFoundThenReturnOrderFails() {
+        when(orderMapper.findByBizId(mockUUID)).thenReturn(java.util.Optional.empty());
+        try {
+            orderService.takeOrder(mockUUID, new TakeOrderRequest(OrderStatus.TAKEN.name()));
+        } catch (Exception e) {
+            assertEquals(BizError.ORDER_NOT_FOUND.getMessage(), e.getMessage());
+        }
+    }
+
+    @Test
+    @DisplayName("When take order with order already taken then return order fails")
+    void whenTakeOrderWithOrderAlreadyTakenThenReturnOrderFails() {
+        Order order = Order.builder()
+                .bizId(mockUUID)
+                .distance(TestConstant.VALID_DISTANCE)
+                .status(OrderStatus.TAKEN.name())
+                .version(1)
+                .build();
+        when(orderMapper.findByBizId(mockUUID)).thenReturn(java.util.Optional.of(order));
+        try {
+            orderService.takeOrder(mockUUID, new TakeOrderRequest(OrderStatus.TAKEN.name()));
+        } catch (Exception e) {
+            assertEquals(BizError.ORDER_ALREADY_TAKEN.getMessage(), e.getMessage());
+        }
+    }
+
+    @Test
+    @DisplayName("When take order with update status error then return order fails")
+    void whenTakeOrderWithUpdateStatusErrorThenReturnOrderFails() {
+        Order order = Order.builder()
+                .bizId(mockUUID)
+                .distance(TestConstant.VALID_DISTANCE)
+                .status(OrderStatus.UNASSIGNED.name())
+                .version(0)
+                .build();
+        when(orderMapper.findByBizId(mockUUID)).thenReturn(java.util.Optional.of(order));
+        when(orderMapper.updateStatus(order)).thenReturn(0);
+        try {
+            orderService.takeOrder(mockUUID, new TakeOrderRequest(OrderStatus.TAKEN.name()));
+        } catch (Exception e) {
+            assertEquals(BizError.ORDER_ALREADY_TAKEN.getMessage(), e.getMessage());
+        }
+    }
+}

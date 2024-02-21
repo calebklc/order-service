@@ -10,13 +10,14 @@ public enum BizError implements BaseError {
      * Order related error
      */
     ORDER_PLACED_FAILED("Order placed failed"),
+    ORDER_NOT_FOUND("Order not found"),
+    ORDER_ALREADY_TAKEN("Order already taken"),
+    ACCEPT_TAKEN_ONLY("Only TAKEN status can be accepted"),
 
     /**
      * Distance matrix related error
      */
     DISTANCE_MATRIX_FAILED("Unable to get distance matrix"),
-    DISTANCE_MATRIX_NOT_FOUND("Distance matrix not found"),
-    DISTANCE_MATRIX_ZERO_RESULTS("No distance found"),
 
     /**
      * Google Maps API related error
