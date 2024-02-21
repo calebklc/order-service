@@ -64,10 +64,10 @@
         inner join (
         select id
         from orders
-        order by created_at, id desc
+        order by created_at desc, id desc
         limit #{limit,jdbcType=INTEGER} offset #{offset,jdbcType=INTEGER}
         ) as t using (id)
-        order by created_at, id desc
+        order by created_at desc, id desc
     </select>
     <update id="updateStatus" parameterType="com.calebklc.orderservice.order.entity.Order">
         update orders
