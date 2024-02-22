@@ -1,0 +1,75 @@
+version: "3"
+services:
+  mysql:
+    image: mysql:8
+    restart: unless-stopped
+    ports:
+      - "3326:3306"
+    environment:
+      - TZ=Asia/Hong_Kong
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=orderdb
+      - MYSQL_USER=orderservice
+      - MYSQL_PASSWORD=orderservice
+    command: --default-authentication-plugin=caching_sha2_password
+      --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+      --explicit_defaults_for_timestamp=true --lower_case_table_names=1
+    #    volumes:
+    #      - ./data:/var/lib/mysql
+    #      - ./config:/etc/mysql/conf.d
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      timeout: 20s
+      retries: 10
+    networks:
+      - order-service-network
+
+  init-db:
+    image: mysql:8
+    restart: no
+    environment:
+      - MYSQL_ALLOW_EMPTY_PASSWORD=yes
+    volumes:
+      - ./src/main/resources/sql:/sql
+    depends_on:
+      mysql:
+        condition: service_healthy
+    entrypoint: [ "bash", "-c" ]
+    command: |
+      "
+      echo -e 'Waiting for the MySQL to be ready......'
+      while ! mysql -h mysql -u orderservice -porderservice -e 'SELECT 1'; do sleep 1; done
+      
+      echo -e 'Checking if the table exists......'
+      if mysql -h mysql -u orderservice -porderservice orderdb -e 'SELECT 1 FROM orders LIMIT 1'; then
+          echo -e 'Table exists, skipping the creation'
+          exit 0
+      fi
+      
+      echo -e 'Creating the table......'
+      mysql -h mysql -u orderservice -porderservice orderdb < /sql/V20240220001007__create_orders_table.sql && exit
+      "
+    networks:
+      - order-service-network
+
+  app:
+    image: order-service
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      init-db:
+        condition: service_completed_successfully
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - GOOGLE_MAPS_API_KEY=${GOOGLE_MAPS_API_KEY}
+    networks:
+      - order-service-network
+
+networks:
+  order-service-network:

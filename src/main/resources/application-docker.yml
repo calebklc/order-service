@@ -1,0 +1,16 @@
+spring:
+  config:
+    activate:
+      on-profile:
+        - docker
+  datasource:
+    url: jdbc:mysql://mysql:3306/orderdb?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Hong_Kong&characterEncoding=UTF-8
+    username: orderservice
+    password: orderservice
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      connection-timeout: 30000
+      idle-timeout: 60000
+      max-lifetime: 1800000
+      maximum-pool-size: 16
+      minimum-idle: 8
