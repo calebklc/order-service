@@ -58,7 +58,7 @@ class OrderServiceApplicationTests {
                 .uri("/orders")
                 .bodyValue(placeOrderRequest)
                 .exchange()
-                .expectStatus().isCreated()
+                .expectStatus().isOk()
                 .expectBody(PlaceOrderResponse.class).value(actualOrder -> {
                     assertThat(actualOrder).isNotNull();
                     assertThat(actualOrder.distance()).isEqualTo(expectedOrder.getDistance());

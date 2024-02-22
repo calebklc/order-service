@@ -30,7 +30,7 @@ public class OrderController implements OrderResource {
     public ResponseEntity<PlaceOrderResponse> placeOrder(PlaceOrderRequest request) {
         Order order = orderService.placeOrder(request);
 
-        return ResponseEntity.status(HttpStatus.CREATED)
+        return ResponseEntity.status(HttpStatus.OK)
                 .body(PlaceOrderResponse.builder()
                               .id(order.getBizId())
                               .distance(order.getDistance())
